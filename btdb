@@ -16,24 +16,23 @@ public class btdb{
 		while(true){
 			String command = in.nextLine();
 			String[] commandParts = command.split("\\s");
-			if(commandParts[0] == "insert"){
-				int insertKey = Integer.parseInt(commandParts[1]);
-				System.out.println(insertKey);
-			}
+			if(commandParts[0].equals("insert") || commandParts[0].equals("update") || commandParts[0].equals("select") || commandParts[0].equals("exit")){
+				if(commandParts[0].equals("insert")){
+					int insertKey = Integer.parseInt(commandParts[1]);
+					System.out.println(insertKey + " inserted.");
+				}
+				if(commandParts[0].equals("update")){
 				
-			if(commandParts[0] == "update"){
+				}
+				
+				if(commandParts[0].equals("select")){
 			
-			}
+				}
 				
-			if(commandParts[0] == "select"){
-			
-			}
-				
-			if(commandParts[0] == "exit"){
-				break;
-			}
-				
-			else{
+				if(commandParts[0].equals("exit")){
+					break;
+				}
+			}else{
 				System.out.println("ERROR: invalid command");
 			}
 		}
