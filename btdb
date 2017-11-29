@@ -1,10 +1,44 @@
 import java.util.*;
+import java.io.*;
 
 public class btdb{
-	public static void main(String args[]){
+	RandomAccessFile file;
+	long cntRecords;
+	
+	public static void main(String args[]) throws IOException{
     	Scanner in = new Scanner(System.in);
-	String bt = args[0];
-	String values = args[1];
+		String bt = args[0];
+		String values = args[1];
+		btdb mainBtdb = new btdb();
+		RandomAccessFile fileBt = new RandomAccessFile(bt, "rwd");
+		mainBtdb.ValuesRecords(values);
+		
+		while(true){
+			String command = in.nextLine();
+			String[] commandParts = command.split("\\s");
+			if(commandParts[0] == "insert"){
+				int insertKey = Integer.parseInt(commandParts[1]);
+				System.out.println(insertKey);
+			}
+				
+			if(commandParts[0] == "update"){
+			
+			}
+				
+			if(commandParts[0] == "select"){
+			
+			}
+				
+			if(commandParts[0] == "exit"){
+				break;
+			}
+				
+			else{
+				System.out.println("ERROR: invalid command");
+			}
+		}
+		
+		
 	}
 	
 	public void ValuesRecords(String strFile) throws IOException{
@@ -12,12 +46,13 @@ public class btdb{
 		if(!file.exists()){
 			this.cntRecords = 0;
 			this.file = new RandomAccessFile(strFile, "rwd");
-			this.file.seek(RECORD_COUNT_OFFSET);
-			this.file.writelong(this.cntRecords);
+			this.file.seek(0);
+			this.file.writeLong(this.cntRecords);
 		}else{
 			this.file = new RandomAccessFile(strFile,"rwd");
-			this.file.seek(RECORD_COUNT_OFFSET);
+			this.file.seek(0);
 			this.cntRecords = this.file.readLong();
+			System.out.println(this.cntRecords);
 		}
 	}
 }
