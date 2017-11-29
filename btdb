@@ -3,7 +3,21 @@ import java.util.*;
 public class btdb{
 	public static void main(String args[]){
     	Scanner in = new Scanner(System.in);
-    	String bt = args[0]
-		String values = args[1]
+	String bt = args[0];
+	String values = args[1];
+	}
+	
+	public void ValuesRecords(String strFile) throws IOException{
+		File file = new File(strFile);
+		if(!file.exists()){
+			this.cntRecords = 0;
+			this.file = new RandomAccessFile(strFile, "rwd");
+			this.file.seek(RECORD_COUNT_OFFSET);
+			this.file.writelong(this.cntRecords);
+		}else{
+			this.file = new RandomAccessFile(strFile,"rwd");
+			this.file.seek(RECORD_COUNT_OFFSET);
+			this.cntRecords = this.file.readLong();
+		}
 	}
 }
