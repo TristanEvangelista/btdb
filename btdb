@@ -1,57 +1,105 @@
 import java.util.*;
 import java.io.*;
 
-public class btdb{
-	RandomAccessFile file;
-	long cntRecords;
+
+//java -Xmx32M btdb2 Data.bt Data.values
+
+
+public class btdb2{
 	
-	public static void main(String args[]) throws IOException{
+	final static int MaxChildrenNodes = 5;	
+	final static int MaxByteSizeValueRecord = 256;
+	final static int ByteSizeHeader = 8;
+	
+	public static void main(String args[])throws IOException{
     	Scanner in = new Scanner(System.in);
 		String bt = args[0];
 		String values = args[1];
-		btdb mainBtdb = new btdb();
-		RandomAccessFile fileBt = new RandomAccessFile(bt, "rwd");
-		mainBtdb.ValuesRecords(values);
+		File newbtFile = new File(bt);
+		RandomAccessFile btFile = new RandomAccessFile(bt,"rwd");
+		RandomAccessFile valuesFile = new RandomAccessFile(values,"rwd");
 		
-		while(true){
-			String command = in.nextLine();
-			String[] commandParts = command.split("\\s");
-			if(commandParts[0].equals("insert") || commandParts[0].equals("update") || commandParts[0].equals("select") || commandParts[0].equals("exit")){
-				if(commandParts[0].equals("insert")){
-					int insertKey = Integer.parseInt(commandParts[1]);
+		long numberOfRecords = 0;
+		long recordPlace = 0;
+		valuesFile.seek(0);
+		valuesFile.writeLong(numberOfRecords);
+		
+		//BTree
+		long numberOfNodes = 0;
+		long offsetNumberOfRoot = 0; 
+		long[] listOfPointers = new long[(3*MaxChildrenNodes)-1];
+		
+		
+		//Updates the number of Nodes
+		btFile.seek(0);
+		btFile.writeLong(numberOfNodes);
+		
+		
+		while(in.hasNext()){
+			String command = in.next();
+			if(command.equals("insert") || command.equals("update") || command.equals("select") || command.equals("exit")){
+				
+				if(command.equals("insert")){
+					System.out.println("insert chosen");
+					long insertKey = Integer.parseInt(in.next());
+					String valueString = in.nextLine();
+					
+					
+					//Writes into the valuesFile
+					byte[] valueByteArray = valueString.getBytes("UTF8");
+					int stringLengthOfBytes = valueByteArray.length;
+					valuesFile.seek(ByteSizeHeader + numberOfRecords*MaxByteSizeValueRecord);
+					valuesFile.writeShort(stringLengthOfBytes);
+					valuesFile.write(valueString.getBytes("UTF8"));
+					
+					//Updates the header of valuesFile
+					numberOfRecords++;
+					valuesFile.seek(0);
+					valuesFile.writeLong(numberOfRecords);
+					
+					
 					System.out.println(insertKey + " inserted.");
 				}
-				if(commandParts[0].equals("update")){
 				
+				if(command.equals("update")){
+					System.out.println("update chosen");
+					long updateKey = Integer.parseInt(in.next());
+					String valueString = in.nextLine();
+					
+					//Writes into the valuesFile
+					byte[] valueByteArray = valueString.getBytes("UTF8");
+					int stringLengthOfBytes = valueByteArray.length;
+					
+					recordPlace = ByteSizeHeader;
+					valuesFile.seek(recordPlace);
+					
+					valuesFile.writeShort(stringLengthOfBytes);
+					valuesFile.write(valueString.getBytes("UTF8"));
 				}
 				
-				if(commandParts[0].equals("select")){
-			
+				if(command.equals("select")){
+					System.out.println("select chosen");
+					long insertKey = Integer.parseInt(in.next());
+					
+					recordPlace = ByteSizeHeader;
+					
+					
+					//finds inside valuesFile
+					valuesFile.seek(recordPlace);
+					int stringLengthOfBytes = valuesFile.readShort(); 
+					byte[] valueByteArray = new byte[stringLengthOfBytes];
+					int valueByteArrayRead = valuesFile.read(valueByteArray);
+					String valueString = new String(valueByteArray, "UTF-8");
+					System.out.println(insertKey + " => " + valueString);
 				}
 				
-				if(commandParts[0].equals("exit")){
+				if(command.equals("exit")){
+					System.out.println("exit chosen");
 					break;
 				}
 			}else{
 				System.out.println("ERROR: invalid command");
 			}
-		}
-		
-		
-	}
-	
-	public void ValuesRecords(String strFile) throws IOException{
-		File file = new File(strFile);
-		if(!file.exists()){
-			this.cntRecords = 0;
-			this.file = new RandomAccessFile(strFile, "rwd");
-			this.file.seek(0);
-			this.file.writeLong(this.cntRecords);
-		}else{
-			this.file = new RandomAccessFile(strFile,"rwd");
-			this.file.seek(0);
-			this.cntRecords = this.file.readLong();
-			System.out.println(this.cntRecords);
 		}
 	}
 }
