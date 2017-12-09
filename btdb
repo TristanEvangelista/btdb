@@ -11,7 +11,7 @@ public class btdb{
 	public final static int MaxKeys = MaxChildrenNodes-1;
 	
 	//BTree stuff
-	public static RandomAccessFile btFile;
+	private static RandomAccessFile btFile;
 	public static long numberOfNodes = 0;
 	public static int maxInList = (3*MaxChildrenNodes)-1;
 	
@@ -28,7 +28,7 @@ public class btdb{
 		String values = args[1];
 		File newbtFile = new File(bt);
 		File newvaluesFile = new File(values);
-		RandomAccessFile btFile = new RandomAccessFile(bt,"rwd");
+		btFile = new RandomAccessFile(bt,"rwd");
 		RandomAccessFile valuesFile = new RandomAccessFile(values,"rwd");
 		
 		//Beginning of values file
@@ -52,8 +52,11 @@ public class btdb{
 		btFile.seek(ByteSizeHeader);
 		btFile.writeLong(locationOfRootNode);
 		
-		Node source = new Node(0); 
-		writeToNode(source);
+		Node rootNode = new Node(0); 
+		System.out.println(rootNode.nodeID);
+		System.out.println(rootNode.parentID);
+		System.out.println(rootNode.childrenIDs[0]);
+		writeToNode(rootNode);
 		
 		while(in.hasNext()){
 			String command = in.next();
@@ -63,10 +66,10 @@ public class btdb{
 					String valueString = in.nextLine();
 					
 					//check if key exists already
-					if(insertKey == searchNodes(insertKey, locationOfRootNode)){
-						System.out.println("ERROR: " + insertKey + " already exists.");
-						continue;
-					}
+					//if(insertKey == searchNodes(insertKey, locationOfRootNode)){
+						//System.out.println("ERROR: " + insertKey + " already exists.");
+						//continue;
+					//}
 					
 					//updates BTree
 					insert(insertKey, locationOfRootNode, numberOfRecords);					
@@ -169,7 +172,7 @@ public class btdb{
 		}
     }
 	//method for writing
-	private static void writeToNode(Node node) throws IOException{ //Writes the Node's values onto a file
+	private static void writeToNode(Node node) throws IOException{
 		btFile.seek(offsetInitialBytes + node.nodeID * nodeLengthBytes);
 		btFile.writeLong(node.parentID);
 		for(int i = 0; i < MaxChildrenNodes; i++){
@@ -181,7 +184,7 @@ public class btdb{
 		}
     }
 	//method for searching
-	public static long searchNodes(long key, long position) throws IOException{ //Recursively searches for a Key in one of the BTree's Nodes
+	public static long searchNodes(long key, long position) throws IOException{ 
 		Node seeker = readNode(position);
 		long newPosition;
 		for(int i = 0; i < MaxKeys; i++){
@@ -228,7 +231,7 @@ public class btdb{
 			root.addChild(node.nodeID);
 			root.addChild(y.nodeID);
 			writeToNode(node); writeToNode(y); writeToNode(root);
-			btFile.seek(8); btFile.writeLong(root.nodeID);
+			btFile.seek(ByteSizeHeader); btFile.writeLong(root.nodeID);
 			node = null; y = null; root = null; 
 		}else{
 			Node ancestor = readNode(node.parentID); 
@@ -258,20 +261,16 @@ public class btdb{
 }
 
 class Node{
-	private final int MaxChildrenNodes = 3;
+	private final int MaxChildrenNodes = 4;
 	private final int MaxKeys = MaxChildrenNodes-1;
-	long nodeID;
-	long parentID;
-	long[] nodeKeys;
-	long[] childrenIDs;
-	long[] offsetOfValues;
+	public long nodeID;
+	public long parentID = -1;
+	public long[] nodeKeys = new long[MaxKeys];
+	public long[] childrenIDs = new long[MaxChildrenNodes];
+	public long[] offsetOfValues = new long[MaxKeys];
 	
 	public Node(long NodeNumber){
-		long[] nodeKeys = new long[MaxKeys];
-		long[] childrenIDs = new long[MaxChildrenNodes];
-		long[] offsetOfValues = new long[MaxKeys];
-		long nodeID = NodeNumber;
-		long parentID = -1;
+		this.nodeID = NodeNumber;
 		Arrays.fill(nodeKeys, -1);
 		Arrays.fill(childrenIDs, -1);
 		Arrays.fill(offsetOfValues, -1);
