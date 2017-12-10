@@ -53,10 +53,9 @@ public class btdb{
 		btFile.writeLong(locationOfRootNode);
 		
 		Node rootNode = new Node(0); 
-		System.out.println(rootNode.nodeID);
-		System.out.println(rootNode.parentID);
-		System.out.println(rootNode.childrenIDs[0]);
+		numberOfNodes = 1;
 		writeToNode(rootNode);
+		printBT();
 		
 		while(in.hasNext()){
 			String command = in.next();
@@ -70,10 +69,11 @@ public class btdb{
 						//System.out.println("ERROR: " + insertKey + " already exists.");
 						//continue;
 					//}
-					
 					//updates BTree
 					insert(insertKey, locationOfRootNode, numberOfRecords);					
 					//Writes Header into the BTree file
+					
+					//Updates BTFile
 					btFile.seek(0);
 					btFile.writeLong(numberOfNodes);
 					btFile.seek(ByteSizeHeader);
@@ -91,6 +91,7 @@ public class btdb{
 					valuesFile.seek(0);
 					valuesFile.writeLong(numberOfRecords);
 					System.out.println(insertKey + " inserted.");
+					printBT();
 					locationOfRootNode = findRoot();
 				}
 				
@@ -177,7 +178,7 @@ public class btdb{
 		btFile.writeLong(node.parentID);
 		for(int i = 0; i < MaxChildrenNodes; i++){
 			btFile.writeLong(node.childrenIDs[i]);
-			if(i != MaxKeys){
+			if(i < MaxKeys){
 				btFile.writeLong(node.nodeKeys[i]);
 				btFile.writeLong(node.offsetOfValues[i]);
 			}
@@ -258,6 +259,44 @@ public class btdb{
 		btFile.seek(ByteSizeHeader);
 		return btFile.readLong();
 	}	
+	/*
+	public static void printNode(Node node){
+		System.out.print(node.nodeID);
+		System.out.print("(" + node.parentID + ", ");
+		for(int i = 0; i < MaxChildrenNodes; i++){
+			if (i == MaxKeys){
+				System.out.print(node.childrenIDs[i] + ")" + "\n");
+			} else {
+				System.out.print(node.childrenIDs[i] + ", ");
+				System.out.print(node.nodeKeys[i] + ", ");
+				System.out.print(node.offsetOfValues[i] + ", ");
+			}
+		}		
+	}
+	*/
+	public static void printBT()throws IOException{
+		btFile.seek(0);
+		long numberOfRecordsNew = btFile.readLong();
+		System.out.print(numberOfRecordsNew);
+		btFile.seek(ByteSizeHeader);
+		System.out.print(btFile.readLong());
+		for(int i = 0; i <= numberOfRecordsNew; i++){
+			btFile.seek(offsetInitialBytes + i * nodeLengthBytes);
+			System.out.print("(" + btFile.readLong() + ", ");
+			for(int j = 0; j < MaxChildrenNodes; j++){
+				if (j == MaxKeys){
+					System.out.print(btFile.readLong() + ")" + "\n");
+				} else {
+					System.out.print(btFile.readLong() + ", ");
+					System.out.print(btFile.readLong() + ", ");
+					System.out.print(btFile.readLong() + ", ");
+				}
+			}
+		}
+	}
+	
+	
+	
 }
 
 class Node{
@@ -265,8 +304,8 @@ class Node{
 	private final int MaxKeys = MaxChildrenNodes-1;
 	public long nodeID;
 	public long parentID = -1;
-	public long[] nodeKeys = new long[MaxKeys];
 	public long[] childrenIDs = new long[MaxChildrenNodes];
+	public long[] nodeKeys = new long[MaxKeys];
 	public long[] offsetOfValues = new long[MaxKeys];
 	
 	public Node(long NodeNumber){
@@ -277,7 +316,7 @@ class Node{
 	}
 	
 	public boolean isLeaf(){
-		if(childrenIDs[0] != -1){
+		if(childrenIDs[0] == -1){
 			return true;
 		}
 		return false;
@@ -306,7 +345,7 @@ class Node{
 	}
 	
 	public void insertKey(long key, long offset){
-	    for(int i = MaxChildrenNodes - 2; i >= 0; i--){
+	    for(int i = MaxKeys - 1; i >= 0 ; i--){
 			if(nodeKeys[i] == -1){
 				if(i == 0){
 					nodeKeys[i] = key;  
@@ -322,15 +361,13 @@ class Node{
 					offsetOfValues[i] = offset;
 					childrenIDs[i + 1] = -1;
 				}
-			}
-			else{
-				nodeKeys[i + 1] = key;
-				offsetOfValues[i + 1] = offset;
-				childrenIDs[i + 2] = -1; 
+			} else {
+				nodeKeys[i] = key;
+				offsetOfValues[i] = offset;
+				childrenIDs[i + 1] = -1; 
 			}
 	    }
     }
-	
 	public void transfer(Node parent, Node offspring){
 		parent.insertKey(nodeKeys[MaxKeys / 2], offsetOfValues[MaxKeys / 2]); 
 		nodeKeys[MaxKeys / 2] = -1; 
@@ -345,5 +382,4 @@ class Node{
 			}
 		}
     }
-	
 }
