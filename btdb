@@ -2,10 +2,10 @@ import java.util.*;
 import java.io.*;
 
 
-//java -Xmx32M btdb Data.bt Data.values
+//java -Xmx32M btdb2 Data.bt Data.values
 //BTree visualization, see which one it promotes for even number in splitting
 
-public class btdb{
+public class btdb2{
 	
 	public final static int MaxChildrenNodes = 4;	
 	public final static int MaxKeys = MaxChildrenNodes-1;
@@ -169,6 +169,13 @@ public class btdb{
 		System.out.println("insert() " + "key: " + key + " position: " + position + " offset: " + offset );
 		Node temp = readNode(position);
 		long MaxKeysLast = temp.nodeKeys[MaxKeys-1];
+		if(temp.isLeaf()){
+			temp.insertKey(key, offset);
+		} else {
+			long newPosition = temp.getChild(key);
+			System.out.println("newPosition " + newPosition);
+			insert(key, newPosition, offset);
+		}
 		if(temp != null){
 			System.out.println("MaxKeysLast " + MaxKeysLast);
 			if(MaxKeysLast != -1){
@@ -178,17 +185,13 @@ public class btdb{
 				btFile.writeLong(numberOfNodes);
 				position = findRoot();
 				temp = readNode(position);
+			} else {
+				writeToNode(temp);
 			}
+			temp = null;
 		}
-		if(temp.isLeaf()){
-			temp.insertKey(key, offset);
-		} else {
-			long newPosition = temp.getChild(key);
-			System.out.println("newPosition " + newPosition);
-			insert(key, newPosition, offset);
-		}
-		writeToNode(temp);
     }
+	
 	//method for writing
 	private static void writeToNode(Node node) throws IOException{
 		System.out.println("writeToNode() " + "nodeID: " + node.nodeID);		
@@ -329,16 +332,20 @@ public class btdb{
 }
 
 class Node{
-	private final int MaxChildrenNodes = 4;
+	//these must be one more than the main values in order to allow splitting
+	private final int MaxChildrenNodes = 5;
 	private final int MaxKeys = MaxChildrenNodes-1;
 	public long nodeID;
 	public long parentID = -1;
-	public long[] childrenIDs = new long[MaxChildrenNodes];
-	public long[] nodeKeys = new long[MaxKeys];
-	public long[] offsetOfValues = new long[MaxKeys];
+	public long[] childrenIDs;
+	public long[] nodeKeys;
+	public long[] offsetOfValues;
 	
 	public Node(long NodeNumber){
 		this.nodeID = NodeNumber;
+		childrenIDs = new long[MaxChildrenNodes];
+		nodeKeys = new long[MaxKeys];
+		offsetOfValues = new long[MaxKeys];
 		Arrays.fill(nodeKeys, -1);
 		Arrays.fill(childrenIDs, -1);
 		Arrays.fill(offsetOfValues, -1);
@@ -417,7 +424,8 @@ class Node{
     }
 	public void transfer(Node parent, Node offspring){
 		System.out.println("transfer() " + " parent: " + parent.nodeID + " offspring: " + offspring.nodeID);
-		parent.insertKey(nodeKeys[MaxKeys / 2], offsetOfValues[MaxKeys / 2]); 
+		System.out.println("KEYS: " + nodeKeys[0] + " " + nodeKeys[1] + " "+ nodeKeys[2]);
+		parent.insertKey(nodeKeys[(MaxKeys-1) / 2], offsetOfValues[(MaxKeys-1) / 2]); 
 		nodeKeys[MaxKeys / 2] = -1; 
 		offsetOfValues[MaxKeys / 2] = -1; 
 		for(int i = MaxKeys / 2; i < MaxChildrenNodes; i++){
