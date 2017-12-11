@@ -5,7 +5,7 @@ import java.io.*;
 //java -Xmx32M btdb2 Data.bt Data.values
 //BTree visualization, see which one it promotes for even number in splitting
 
-public class btdb2{
+public class btdb{
 	
 	public final static int MaxChildrenNodes = 4;	
 	public final static int MaxKeys = MaxChildrenNodes-1;
@@ -31,17 +31,13 @@ public class btdb2{
 		File newvaluesFile = new File(values);
 		if(newbtFile.exists()){
 			btFile = new RandomAccessFile(bt,"rwd");
-			
 		} else {
 			btFile = new RandomAccessFile(bt,"rwd");
-			
 		}
 		if(newvaluesFile.exists()){
 			valuesFile = new RandomAccessFile(values,"rwd");
-			
 		} else {
 			valuesFile = new RandomAccessFile(values,"rwd");
-			
 		}
 		
 		//Beginning of values file
@@ -129,6 +125,7 @@ public class btdb2{
 					valuesFile.seek(recordPlace);
 					valuesFile.writeShort(stringLengthOfBytes);
 					valuesFile.write(valueString.getBytes("UTF8"));
+					System.out.println(updateKey + " updated.");
 				}
 				
 				if(command.equals("select")){
@@ -146,10 +143,10 @@ public class btdb2{
 					
 					//finds inside valuesFile
 					recordPlace = (ByteSizeHeader + valueRecordNumber*MaxByteSizeValueRecord);
-					System.out.println(recordPlace);
+					//System.out.println(recordPlace);
 					valuesFile.seek(recordPlace);
 					int stringLengthOfBytes = valuesFile.readShort(); 
-					System.out.println(stringLengthOfBytes);
+					//System.out.println(stringLengthOfBytes);
 					byte[] valueByteArray = new byte[stringLengthOfBytes];
 					int valueByteArrayRead = valuesFile.read(valueByteArray);
 					String valueString = new String(valueByteArray, "UTF-8");
@@ -166,20 +163,20 @@ public class btdb2{
 	}
 	//method for inserting
 	public static void insert(long key, long position, long offset) throws IOException{
-		System.out.println("insert() " + "key: " + key + " position: " + position + " offset: " + offset );
+		//System.out.println("insert() " + "key: " + key + " position: " + position + " offset: " + offset );
 		Node temp = readNode(position);
 		long MaxKeysLast = temp.nodeKeys[MaxKeys-1];
 		if(temp.isLeaf()){
 			temp.insertKey(key, offset);
 		} else {
 			long newPosition = temp.getChild(key);
-			System.out.println("newPosition " + newPosition);
+			//System.out.println("newPosition " + newPosition);
 			insert(key, newPosition, offset);
 		}
 		if(temp != null){
-			System.out.println("MaxKeysLast " + MaxKeysLast);
+			//System.out.println("MaxKeysLast " + MaxKeysLast);
 			if(MaxKeysLast != -1){
-				System.out.println("split");
+				//System.out.println("split");
 				split(temp);
 				btFile.seek(0);
 				btFile.writeLong(numberOfNodes);
@@ -194,7 +191,7 @@ public class btdb2{
 	
 	//method for writing
 	private static void writeToNode(Node node) throws IOException{
-		System.out.println("writeToNode() " + "nodeID: " + node.nodeID);		
+		//System.out.println("writeToNode() " + "nodeID: " + node.nodeID);		
 		btFile.seek(offsetInitialBytes + node.nodeID * nodeLengthBytes);
 		btFile.writeLong(node.parentID);
 		for(int i = 0; i < MaxChildrenNodes; i++){
@@ -207,12 +204,12 @@ public class btdb2{
     }
 	//method for searching
 	public static long searchNodes(long key, long position) throws IOException{
-		System.out.println("searchNodes() " + "key: " + key + " position: " + position);		
+		//System.out.println("searchNodes() " + "key: " + key + " position: " + position);		
 		Node seeker = readNode(position);
 		long newPosition;
 		for(int i = 0; i < MaxKeys; i++){
 			if(seeker.nodeKeys[i] == key){
-				System.out.println(seeker.offsetOfValues[i]);
+				//System.out.println(seeker.offsetOfValues[i]);
 				return seeker.offsetOfValues[i];    
 			}
 			else if(seeker.nodeKeys[i] > key && seeker.childrenIDs[i] != -1){
@@ -228,7 +225,7 @@ public class btdb2{
     }
 	//method for reading
 	private static Node readNode(long position) throws IOException{
-		System.out.println("readNode() " + " position: " + position);
+		//System.out.println("readNode() " + " position: " + position);
 		btFile.seek(offsetInitialBytes + position * nodeLengthBytes);
 		Node toRead = new Node(position);
 		toRead.parentID = btFile.readLong();
@@ -291,7 +288,7 @@ public class btdb2{
 		btFile.seek(ByteSizeHeader);
 		return btFile.readLong();
 	}	
-	
+	/*
 	public static void printNode(Node node){
 		System.out.print(node.nodeID);
 		System.out.print("(" + node.parentID + ", ");
@@ -304,7 +301,7 @@ public class btdb2{
 				System.out.print(node.offsetOfValues[i] + ", ");
 			}
 		}		
-	}
+	}*/
 	
 	public static void printBT()throws IOException{
 		btFile.seek(0);
@@ -359,7 +356,7 @@ class Node{
 	}
 	
 	public void addChild(long position){
-		System.out.println("addChild() " + " position: " + position);
+		//System.out.println("addChild() " + " position: " + position);
 		for(int i = 0; i < MaxChildrenNodes; i++){
 			if(childrenIDs[i] == -1){
 				childrenIDs[i] = position;
@@ -369,10 +366,10 @@ class Node{
 	}
 	
 	public long getChild(long key){
-		System.out.println("getChild() " + " child: " + key);
+		//System.out.println("getChild() " + " child: " + key);
 		long ID = -1;
 		for(int i = 0; i < MaxKeys; i++){
-			System.out.println(nodeKeys[i]);
+			//System.out.println(nodeKeys[i]);
 			if(key < nodeKeys[i] && i == 0){
 				return childrenIDs[i];
 			}
@@ -387,7 +384,7 @@ class Node{
 	}
 	
 	public void insertKey(long key, long offset){
-		System.out.println("insertKey() " + " key: " + key + " offset: " + offset);
+		//System.out.println("insertKey() " + " key: " + key + " offset: " + offset);
 	    for(int i = MaxKeys - 1; i >= 0; i--){
 			if(nodeKeys[i] == -1){
 				if(i == 0){
@@ -423,8 +420,8 @@ class Node{
 	    }
     }
 	public void transfer(Node parent, Node offspring){
-		System.out.println("transfer() " + " parent: " + parent.nodeID + " offspring: " + offspring.nodeID);
-		System.out.println("KEYS: " + nodeKeys[0] + " " + nodeKeys[1] + " "+ nodeKeys[2]);
+		//System.out.println("transfer() " + " parent: " + parent.nodeID + " offspring: " + offspring.nodeID);
+		//System.out.println("KEYS: " + nodeKeys[0] + " " + nodeKeys[1] + " "+ nodeKeys[2]);
 		parent.insertKey(nodeKeys[(MaxKeys-1) / 2], offsetOfValues[(MaxKeys-1) / 2]); 
 		nodeKeys[MaxKeys / 2] = -1; 
 		offsetOfValues[MaxKeys / 2] = -1; 
